@@ -48,7 +48,7 @@ h1 { font-size: 22px; font-weight: 600; margin: 0; text-wrap: balance; }
 figure { margin: 0; display: grid; gap: 6px; }
 figcaption { font-size: 13px; color: var(--muted); }
 canvas { display: block; background: var(--img-bg); border-radius: 4px; max-width: 100%; height: auto; }
-#full { width: 450px; aspect-ratio: 3 / 4; }
+#full { width: 476px; aspect-ratio: 476 / 636; }
 #crop { width: 400px; aspect-ratio: 1; image-rendering: pixelated; }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: grid; gap: 16px; }
 .ctl { display: grid; gap: 6px; }
@@ -73,15 +73,15 @@ svg text { font-family: var(--mono); font-size: 10px; fill: var(--muted); }
 <body>
 <div class="wrap">
   <header>
-    <h1>Random-phase averaging viewer</h1>
+    <h1>Random-phase averaging viewer (RGB)</h1>
     <p class="lede">Six photos through the SplitLohmann display simulation. Drag the sliders to change how many random-phase propagations are averaged (<span class="val">sim.num_iter</span>) and where the eye focuses.</p>
   </header>
   <div class="tabs" id="tabs" role="group" aria-label="Photo"></div>
   <div class="main">
     <div class="views">
       <figure>
-        <canvas id="full" width="450" height="600" aria-label="Simulated retinal image"></canvas>
-        <figcaption>Whole scene (downscaled). Blue box: the region shown at full resolution.</figcaption>
+        <canvas id="full" width="476" height="636" aria-label="Simulated retinal image"></canvas>
+        <figcaption>Whole scene, every 2.5th pixel (no smoothing, so the grain stays as strong as at full size). Blue box: the region shown at full resolution.</figcaption>
       </figure>
       <figure>
         <canvas id="crop" width="400" height="400" aria-label="Full-resolution crop"></canvas>
@@ -97,7 +97,7 @@ svg text { font-family: var(--mono); font-size: 10px; fill: var(--muted); }
       </div>
       <div class="ctl">
         <div class="ctl-head"><label for="fsl">Eye focus</label><span class="val" id="fval"></span></div>
-        <input type="range" id="fsl" min="0" max="7" step="1" value="2">
+        <input type="range" id="fsl" min="0" max="6" step="1" value="2">
         <div class="ticks"><span>far</span><span>near</span></div>
         <button class="play" id="fplay" type="button">Sweep focus</button>
       </div>
@@ -110,12 +110,12 @@ svg text { font-family: var(--mono); font-size: 10px; fill: var(--muted); }
         <svg id="cp" viewBox="0 0 320 110" role="img" aria-label="PSNR versus N"></svg>
         <svg id="cs" viewBox="0 0 320 110" role="img" aria-label="SSIM versus N"></svg>
       </div>
-      <p class="note">Images: Python port of the original <span class="val">render.m</span> (same propagation steps), green channel, mode 1, eight focus planes. Numbers: MATLAB run of the original code on the same photo, reference N = 280, mean of the subject and background focus settings.</p>
+      <p class="note">Images: Python port of the original <span class="val">render.m</span> (same propagation steps), R, G and B simulated separately as with <span class="val">flags.color = true</span>, mode 1, seven focus positions spanning the depths in each photo. Numbers: MATLAB run of the original code on the same photo (green channel), reference N = 280, mean of the subject and background focus settings.</p>
     </div>
   </div>
 </div>
 <script>
-const DATA = {"ck": [1, 5, 10, 20, 30, 40, 50, 60, 70], "focus": [0.25, 0.75, 1.25, 1.75, 2.25, 2.75, 3.25, 3.75], "tile": [450, 600], "crop": 400, "scenes": [{"name": "Chair", "subject": "blue chairs", "subjFocus": 2, "subjD": 1.118, "box": [0.411543287327478, 0.19865884325230512, 0.25094102885821834, 0.3352891869237217], "N": [1, 5, 10, 20, 30, 40, 50, 60, 70], "psnr": [13.1, 19.53, 22.43, 25.26, 26.87, 27.98, 28.81, 29.47, 30.02], "ssim": [0.076, 0.232, 0.341, 0.466, 0.541, 0.592, 0.63, 0.659, 0.683], "compute": [3.9, 15.8, 32.5, 63.2, 93.2, 124.9, 157.7, 191.0, 224.7]}, {"name": "Construction", "subject": "excavator", "subjFocus": 2, "subjD": 1.339, "box": [0.47117794486215536, 0.1581589958158996, 0.2506265664160401, 0.33472803347280333], "N": [1, 5, 10, 20, 30, 40, 50, 60, 70], "psnr": [12.7, 19.12, 21.83, 24.46, 25.98, 27.05, 27.86, 28.51, 29.05], "ssim": [0.058, 0.19, 0.287, 0.401, 0.47, 0.518, 0.555, 0.583, 0.606], "compute": [4.1, 16.7, 32.2, 69.5, 104.9, 138.9, 171.2, 203.2, 235.1]}, {"name": "Croc", "subject": "trash bin", "subjFocus": 6, "subjD": 3.228, "box": [0.7040752351097179, 0.041911148365465216, 0.2507836990595611, 0.3352891869237217], "N": [1, 5, 10, 20, 30, 40, 50, 60, 70], "psnr": [12.3, 18.6, 21.51, 24.36, 25.98, 27.09, 27.92, 28.59, 29.13], "ssim": [0.029, 0.103, 0.172, 0.273, 0.344, 0.399, 0.441, 0.475, 0.504], "compute": [3.9, 16.2, 31.3, 61.2, 91.8, 122.5, 153.1, 183.9, 213.9]}, {"name": "Exit", "subject": "EXIT sign", "subjFocus": 7, "subjD": 3.606, "box": [0.023299748110831235, 0.054575986565911, 0.2518891687657431, 0.33585222502099077], "N": [1, 5, 10, 20, 30, 40, 50, 60, 70], "psnr": [12.62, 18.95, 21.83, 24.67, 26.27, 27.38, 28.21, 28.87, 29.41], "ssim": [0.059, 0.15, 0.222, 0.32, 0.388, 0.439, 0.479, 0.511, 0.537], "compute": [4.1, 16.7, 32.0, 62.3, 92.9, 123.7, 154.3, 186.1, 217.8]}, {"name": "Gymnasium", "subject": "building sign", "subjFocus": 3, "subjD": 1.717, "box": [0.33667083854818525, 0.19899665551839466, 0.2503128911138924, 0.33444816053511706], "N": [1, 5, 10, 20, 30, 40, 50, 60, 70], "psnr": [12.71, 19.1, 21.91, 24.65, 26.21, 27.29, 28.1, 28.75, 29.29], "ssim": [0.09, 0.241, 0.337, 0.445, 0.511, 0.557, 0.592, 0.62, 0.642], "compute": [4.6, 19.2, 36.5, 71.4, 103.6, 135.1, 167.4, 199.8, 233.4]}, {"name": "Parking", "subject": "bench", "subjFocus": 0, "subjD": 0.488, "box": [0.32142857142857145, 0.6236378876781223, 0.2506265664160401, 0.3352891869237217], "N": [1, 5, 10, 20, 30, 40, 50, 60, 70], "psnr": [12.49, 18.63, 21.43, 24.23, 25.83, 26.94, 27.77, 28.43, 28.98], "ssim": [0.093, 0.251, 0.346, 0.45, 0.512, 0.555, 0.588, 0.614, 0.635], "compute": [4.1, 16.9, 32.7, 65.9, 98.0, 130.0, 161.6, 193.0, 224.4]}]};
+const DATA = {"ck": [1, 5, 10, 20, 30, 40, 50, 60, 70], "focus": [0.14173228346456693, 0.7007725942912009, 1.2598129051178348, 1.8188532159444688, 2.377893526771103, 2.936933837597737, 3.495974148424371], "tile": [476, 636], "crop": 400, "scenes": [{"name": "Chair", "subject": "blue chairs", "subjFocus": 2, "subjD": 1.118, "focus": [0.14173228346456693, 0.7007725942912009, 1.2598129051178348, 1.8188532159444688, 2.377893526771103, 2.936933837597737, 3.495974148424371], "box": [0.41117388575015695, 0.19798657718120805, 0.25109855618330196, 0.33557046979865773], "N": [1, 5, 10, 20, 30, 40, 50, 60, 70], "psnr": [13.1, 19.53, 22.43, 25.26, 26.87, 27.98, 28.81, 29.47, 30.02], "ssim": [0.076, 0.232, 0.341, 0.466, 0.541, 0.592, 0.63, 0.659, 0.683], "compute": [3.9, 15.8, 32.5, 63.2, 93.2, 124.9, 157.7, 191.0, 224.7]}, {"name": "Construction", "subject": "excavator", "subjFocus": 2, "subjD": 1.339, "focus": [0.17322834645669294, 0.7611033560971363, 1.3489783657375796, 1.936853375378023, 2.5247283850184665, 3.11260339465891, 3.7004784042993535], "box": [0.47088290544771444, 0.1581589958158996, 0.25046963055729493, 0.33472803347280333], "N": [1, 5, 10, 20, 30, 40, 50, 60, 70], "psnr": [12.7, 19.12, 21.83, 24.46, 25.98, 27.05, 27.86, 28.51, 29.05], "ssim": [0.058, 0.19, 0.287, 0.401, 0.47, 0.518, 0.555, 0.583, 0.606], "compute": [4.1, 16.7, 32.2, 69.5, 104.9, 138.9, 171.2, 203.2, 235.1]}, {"name": "Croc", "subject": "trash bin", "subjFocus": 5, "subjD": 3.228, "focus": [0.2992125984251961, 0.8708767352088806, 1.4425408719925652, 2.0142050087762495, 2.5858691455599345, 3.1575332823436186, 3.7291974191273036], "box": [0.704516938519448, 0.041911148365465216, 0.25094102885821834, 0.3352891869237217], "N": [1, 5, 10, 20, 30, 40, 50, 60, 70], "psnr": [12.3, 18.6, 21.51, 24.36, 25.98, 27.09, 27.92, 28.59, 29.13], "ssim": [0.029, 0.103, 0.172, 0.273, 0.344, 0.399, 0.441, 0.475, 0.504], "compute": [3.9, 16.2, 31.3, 61.2, 91.8, 122.5, 153.1, 183.9, 213.9]}, {"name": "Exit", "subject": "EXIT sign", "subjFocus": 6, "subjD": 3.606, "focus": [0.03149610533924316, 0.6692913798787341, 1.307086654418225, 1.944881928957716, 2.582677203497207, 3.220472478036698, 3.8582677525761886], "box": [0.023270440251572325, 0.05453020134228188, 0.25157232704402516, 0.33557046979865773], "N": [1, 5, 10, 20, 30, 40, 50, 60, 70], "psnr": [12.62, 18.95, 21.83, 24.67, 26.27, 27.38, 28.21, 28.87, 29.41], "ssim": [0.059, 0.15, 0.222, 0.32, 0.388, 0.439, 0.479, 0.511, 0.537], "compute": [4.1, 16.7, 32.0, 62.3, 92.9, 123.7, 154.3, 186.1, 217.8]}, {"name": "Gymnasium", "subject": "building sign", "subjFocus": 3, "subjD": 1.717, "focus": [0.09448818897637797, 0.7086582282766292, 1.3228282675768803, 1.9369983068771315, 2.5511683461773824, 3.1653383854776336, 3.7795084247778847], "box": [0.3368816530995617, 0.19899665551839466, 0.25046963055729493, 0.33444816053511706], "N": [1, 5, 10, 20, 30, 40, 50, 60, 70], "psnr": [12.71, 19.1, 21.91, 24.65, 26.21, 27.29, 28.1, 28.75, 29.29], "ssim": [0.09, 0.241, 0.337, 0.445, 0.511, 0.557, 0.592, 0.62, 0.642], "compute": [4.6, 19.2, 36.5, 71.4, 103.6, 135.1, 167.4, 199.8, 233.4]}, {"name": "Parking", "subject": "bench", "subjFocus": 1, "subjD": 0.488, "focus": [0.015748031496063, 0.6086572716005665, 1.20156651170507, 1.7944757518095735, 2.387384991914077, 2.9802942320185806, 3.573203472123084], "box": [0.3212045169385194, 0.6237458193979933, 0.25094102885821834, 0.33444816053511706], "N": [1, 5, 10, 20, 30, 40, 50, 60, 70], "psnr": [12.49, 18.63, 21.43, 24.23, 25.83, 26.94, 27.77, 28.43, 28.98], "ssim": [0.093, 0.251, 0.346, 0.45, 0.512, 0.555, 0.588, 0.614, 0.635], "compute": [4.1, 16.9, 32.7, 65.9, 98.0, 130.0, 161.6, 193.0, 224.4]}]};
 const CK = DATA.ck, FOC = DATA.focus, TW = DATA.tile[0], TH = DATA.tile[1], CS = DATA.crop;
 const st = { s: 0, n: 2, f: DATA.scenes[0].subjFocus };
 const cache = {};
@@ -147,9 +147,10 @@ function draw() {
     cc.imageSmoothingEnabled = false;
     cc.drawImage(sp.crop, st.n * CS, st.f * CS, CS, CS, 0, 0, CS, CS);
   } else placeholder(cc, CS, CS);
-  const N = CK[st.n], D = FOC[st.f], i = sc.N.indexOf(N);
+  const N = CK[st.n], D = sc.focus[st.f], i = sc.N.indexOf(N);
   $('nval').textContent = `N = ${N}`;
-  $('fval').textContent = `${D.toFixed(2)} D · ${Math.round(100 / D)} cm${st.f === sc.subjFocus ? ' · on subject' : ''}`;
+  const dist = 100 / D, dtxt = dist > 2000 ? 'far' : dist >= 100 ? `${(dist / 100).toFixed(1)} m` : `${Math.round(dist)} cm`;
+  $('fval').textContent = `${D.toFixed(2)} D · ${dtxt}${st.f === sc.subjFocus ? ' · on subject' : ''}`;
   $('cropcap').textContent = `Full-resolution crop: ${sc.subject} (about ${sc.subjD.toFixed(2)} D)`;
   $('sp').textContent = sc.psnr[i].toFixed(1); $('ss').textContent = sc.ssim[i].toFixed(2); $('st').textContent = Math.round(sc.compute[i]);
   chart($('cp'), sc.N, sc.psnr, i, v => v.toFixed(0), 'PSNR (dB)');
