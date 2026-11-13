@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Random-Phase Averaging Viewer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* lab-notebook tool: neutral greys with a cool slate bias, one blue accent; images left, controls right */
+  --bg: #eef0f1;
+  --panel: #ffffff;
+  --ink: #15191c;
+  --muted: #5a6369;
+  --line: #d6dbde;
+  --accent: #2563c4;
+  --accent-soft: #dfe9f8;
+  --img-bg: #0e1012;
+  --sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121518; --panel: #1b1f23; --ink: #e8ecee; --muted: #9aa4ab; --line: #2e353b;
+    --accent: #6ea2f0; --accent-soft: #1f2f47; --img-bg: #07080a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121518; --panel: #1b1f23; --ink: #e8ecee; --muted: #9aa4ab; --line: #2e353b;
+  --accent: #6ea2f0; --accent-soft: #1f2f47; --img-bg: #07080a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 22px 20px 32px; display: grid; gap: 16px; }
+h1 { font-size: 22px; font-weight: 600; margin: 0; text-wrap: balance; }
+.lede { margin: 2px 0 0; color: var(--muted); max-width: 70ch; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tab { font: 500 14px var(--sans); color: var(--ink); background: var(--panel); border: 1px solid var(--line);
+       border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+.tab[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tab:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.main { display: grid; grid-template-columns: auto minmax(300px, 1fr); gap: 16px; align-items: start; }
+.views { display: flex; gap: 12px; flex-wrap: wrap; }
+figure { margin: 0; display: grid; gap: 6px; }
+figcaption { font-size: 13px; color: var(--muted); }
+canvas { display: block; background: var(--img-bg); border-radius: 4px; max-width: 100%; height: auto; }
+#full { width: 450px; aspect-ratio: 3 / 4; }
+#crop { width: 400px; aspect-ratio: 1; image-rendering: pixelated; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: grid; gap: 16px; }
+.ctl { display: grid; gap: 6px; }
+.ctl-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.ctl-head label { font-weight: 500; }
+.val { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 14px; }
+input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; }
+.ticks { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 11px; color: var(--muted); padding: 0 2px; }
+.play { justify-self: start; font: 500 13px var(--sans); color: var(--accent); background: var(--accent-soft);
+        border: 1px solid transparent; border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; }
+.stat b { display: block; font-family: var(--mono); font-size: 18px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 12px; color: var(--muted); }
+.charts { display: grid; gap: 4px; }
+svg text { font-family: var(--mono); font-size: 10px; fill: var(--muted); }
+.note { font-size: 12px; color: var(--muted); margin: 0; }
+@media (max-width: 980px) { .main { grid-template-columns: 1fr; } }
+@media (max-width: 480px) { #full { width: 100%; } #crop { width: 100%; } .stats { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Random-phase averaging viewer</h1>
+    <p class="lede">Six photos through the SplitLohmann display simulation. Drag the sliders to change how many random-phase propagations are averaged (<span class="val">sim.num_iter</span>) and where the eye focuses.</p>
+  </header>
+  <div class="tabs" id="tabs" role="group" aria-label="Photo"></div>
+  <div class="main">
+    <div class="views">
+      <figure>
+        <canvas id="full" width="450" height="600" aria-label="Simulated retinal image"></canvas>
+        <figcaption>Whole scene (downscaled). Blue box: the region shown at full resolution.</figcaption>
+      </figure>
+      <figure>
+        <canvas id="crop" width="400" height="400" aria-label="Full-resolution crop"></canvas>
+        <figcaption id="cropcap">Full-resolution crop</figcaption>
+      </figure>
+    </div>
+    <div class="panel">
+      <div class="ctl">
+        <div class="ctl-head"><label for="nsl">Averaged propagations N</label><span class="val" id="nval"></span></div>
+        <input type="range" id="nsl" min="0" max="8" step="1" value="2">
+        <div class="ticks" id="nticks"></div>
+        <button class="play" id="nplay" type="button">Play N from 1 to 70</button>
+      </div>
+      <div class="ctl">
+        <div class="ctl-head"><label for="fsl">Eye focus</label><span class="val" id="fval"></span></div>
+        <input type="range" id="fsl" min="0" max="7" step="1" value="2">
+        <div class="ticks"><span>far</span><span>near</span></div>
+        <button class="play" id="fplay" type="button">Sweep focus</button>
+      </div>
+      <div class="stats">
+        <div class="stat"><b id="sp"></b><span>PSNR (dB)</span></div>
+        <div class="stat"><b id="ss"></b><span>SSIM</span></div>
+        <div class="stat"><b id="st"></b><span>compute (s)</span></div>
+      </div>
+      <div class="charts">
+        <svg id="cp" viewBox="0 0 320 110" role="img" aria-label="PSNR versus N"></svg>
+        <svg id="cs" viewBox="0 0 320 110" role="img" aria-label="SSIM versus N"></svg>
+      </div>
+      <p class="note">Images: Python port of the original <span class="val">render.m</span> (same propagation steps), green channel, mode 1, eight focus planes. Numbers: MATLAB run of the original code on the same photo, reference N = 280, mean of the subject and background focus settings.</p>
+    </div>
+  </div>
+</div>
+<script>
+const DATA = {"ck": [1, 5, 10, 20, 30, 40, 50, 60, 70], "focus": [0.25, 0.75, 1.25, 1.75, 2.25, 2.75, 3.25, 3.75], "tile": [450, 600], "crop": 400, "scenes": [{"name": "Chair", "subject": "blue chairs", "subjFocus": 2, "subjD": 1.118, "box": [0.411543287327478, 0.19865884325230512, 0.25094102885821834, 0.3352891869237217], "N": [1, 5, 10, 20, 30, 40, 50, 60, 70], "psnr": [13.1, 19.53, 22.43, 25.26, 26.87, 27.98, 28.81, 29.47, 30.02], "ssim": [0.076, 0.232, 0.341, 0.466, 0.541, 0.592, 0.63, 0.659, 0.683], "compute": [3.9, 15.8, 32.5, 63.2, 93.2, 124.9, 157.7, 191.0, 224.7]}, {"name": "Construction", "subject": "excavator", "subjFocus": 2, "subjD": 1.339, "box": [0.47117794486215536, 0.1581589958158996, 0.2506265664160401, 0.33472803347280333], "N": [1, 5, 10, 20, 30, 40, 50, 60, 70], "psnr": [12.7, 19.12, 21.83, 24.46, 25.98, 27.05, 27.86, 28.51, 29.05], "ssim": [0.058, 0.19, 0.287, 0.401, 0.47, 0.518, 0.555, 0.583, 0.606], "compute": [4.1, 16.7, 32.2, 69.5, 104.9, 138.9, 171.2, 203.2, 235.1]}, {"name": "Croc", "subject": "trash bin", "subjFocus": 6, "subjD": 3.228, "box": [0.7040752351097179, 0.041911148365465216, 0.2507836990595611, 0.3352891869237217], "N": [1, 5, 10, 20, 30, 40, 50, 60, 70], "psnr": [12.3, 18.6, 21.51, 24.36, 25.98, 27.09, 27.92, 28.59, 29.13], "ssim": [0.029, 0.103, 0.172, 0.273, 0.344, 0.399, 0.441, 0.475, 0.504], "compute": [3.9, 16.2, 31.3, 61.2, 91.8, 122.5, 153.1, 183.9, 213.9]}, {"name": "Exit", "subject": "EXIT sign", "subjFocus": 7, "subjD": 3.606, "box": [0.023299748110831235, 0.054575986565911, 0.2518891687657431, 0.33585222502099077], "N": [1, 5, 10, 20, 30, 40, 50, 60, 70], "psnr": [12.62, 18.95, 21.83, 24.67, 26.27, 27.38, 28.21, 28.87, 29.41], "ssim": [0.059, 0.15, 0.222, 0.32, 0.388, 0.439, 0.479, 0.511, 0.537], "compute": [4.1, 16.7, 32.0, 62.3, 92.9, 123.7, 154.3, 186.1, 217.8]}, {"name": "Gymnasium", "subject": "building sign", "subjFocus": 3, "subjD": 1.717, "box": [0.33667083854818525, 0.19899665551839466, 0.2503128911138924, 0.33444816053511706], "N": [1, 5, 10, 20, 30, 40, 50, 60, 70], "psnr": [12.71, 19.1, 21.91, 24.65, 26.21, 27.29, 28.1, 28.75, 29.29], "ssim": [0.09, 0.241, 0.337, 0.445, 0.511, 0.557, 0.592, 0.62, 0.642], "compute": [4.6, 19.2, 36.5, 71.4, 103.6, 135.1, 167.4, 199.8, 233.4]}, {"name": "Parking", "subject": "bench", "subjFocus": 0, "subjD": 0.488, "box": [0.32142857142857145, 0.6236378876781223, 0.2506265664160401, 0.3352891869237217], "N": [1, 5, 10, 20, 30, 40, 50, 60, 70], "psnr": [12.49, 18.63, 21.43, 24.23, 25.83, 26.94, 27.77, 28.43, 28.98], "ssim": [0.093, 0.251, 0.346, 0.45, 0.512, 0.555, 0.588, 0.614, 0.635], "compute": [4.1, 16.9, 32.7, 65.9, 98.0, 130.0, 161.6, 193.0, 224.4]}]};
+const CK = DATA.ck, FOC = DATA.focus, TW = DATA.tile[0], TH = DATA.tile[1], CS = DATA.crop;
+const st = { s: 0, n: 2, f: DATA.scenes[0].subjFocus };
+const cache = {};
+const $ = id => document.getElementById(id);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+function sprites(name) {
+  if (!cache[name]) {
+    const full = new Image(), crop = new Image();
+    full.onload = crop.onload = () => draw();
+    full.src = `img/${name}_full.jpg`; crop.src = `img/${name}_crop.jpg`;
+    cache[name] = { full, crop };
+  }
+  return cache[name];
+}
+function placeholder(ctx, w, h) {
+  ctx.fillStyle = css('--img-bg'); ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = '#8a949b'; ctx.font = '14px ' + css('--sans'); ctx.fillText('Loading…', 16, 28);
+}
+function draw() {
+  const sc = DATA.scenes[st.s], sp = sprites(sc.name);
+  const cf = $('full').getContext('2d'), cc = $('crop').getContext('2d');
+  if (sp.full.complete && sp.full.naturalWidth) {
+    cf.drawImage(sp.full, st.n * TW, st.f * TH, TW, TH, 0, 0, TW, TH);
+    const [r, c, h, w] = sc.box;
+    cf.strokeStyle = '#4c8dff'; cf.lineWidth = 2; cf.strokeRect(c * TW, r * TH, w * TW, h * TH);
+  } else placeholder(cf, TW, TH);
+  if (sp.crop.complete && sp.crop.naturalWidth) {
+    cc.imageSmoothingEnabled = false;
+    cc.drawImage(sp.crop, st.n * CS, st.f * CS, CS, CS, 0, 0, CS, CS);
+  } else placeholder(cc, CS, CS);
+  const N = CK[st.n], D = FOC[st.f], i = sc.N.indexOf(N);
+  $('nval').textContent = `N = ${N}`;
+  $('fval').textContent = `${D.toFixed(2)} D · ${Math.round(100 / D)} cm${st.f === sc.subjFocus ? ' · on subject' : ''}`;
+  $('cropcap').textContent = `Full-resolution crop: ${sc.subject} (about ${sc.subjD.toFixed(2)} D)`;
+  $('sp').textContent = sc.psnr[i].toFixed(1); $('ss').textContent = sc.ssim[i].toFixed(2); $('st').textContent = Math.round(sc.compute[i]);
+  chart($('cp'), sc.N, sc.psnr, i, v => v.toFixed(0), 'PSNR (dB)');
+  chart($('cs'), sc.N, sc.ssim, i, v => v.toFixed(1), 'SSIM');
+  document.querySelectorAll('.tab').forEach((b, k) => b.setAttribute('aria-pressed', k === st.s));
+  $('nsl').value = st.n; $('fsl').value = st.f;
+}
+function chart(svg, xs, ys, cur, fmt, name) {
+  const W = 320, H = 110, L = 34, R = 10, T = 12, B = 22;
+  const lo = Math.min(...ys), hi = Math.max(...ys), pad = (hi - lo) * 0.08;
+  const y0 = lo - pad, y1 = hi + pad;
+  const X = x => L + (x - 0) / 70 * (W - L - R), Y = y => T + (1 - (y - y0) / (y1 - y0)) * (H - T - B);
+  const ink = css('--muted'), acc = css('--accent'), line = css('--line');
+  let g = '';
+  [y0 + pad, (y0 + y1) / 2, y1 - pad].forEach(v => {
+    g += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="${line}" stroke-width="1"/>`;
+    g += `<text x="${L - 5}" y="${Y(v) + 3}" text-anchor="end">${fmt(v)}</text>`;
+  });
+  [1, 10, 20, 30, 40, 50, 60, 70].forEach(v => g += `<text x="${X(v)}" y="${H - 6}" text-anchor="middle">${v}</text>`);
+  const d = xs.map((x, k) => `${k ? 'L' : 'M'}${X(x).toFixed(1)},${Y(ys[k]).toFixed(1)}`).join('');
+  g += `<path d="${d}" fill="none" stroke="${acc}" stroke-width="2"/>`;
+  g += `<circle cx="${X(xs[cur])}" cy="${Y(ys[cur])}" r="5" fill="${acc}" stroke="${css('--panel')}" stroke-width="2"/>`;
+  g += `<text x="${L + 4}" y="${T - 2}" style="fill:${ink}">${name} vs N</text>`;
+  svg.innerHTML = g;
+}
+DATA.scenes.forEach((sc, k) => {
+  const b = document.createElement('button');
+  b.className = 'tab'; b.type = 'button'; b.textContent = sc.name;
+  b.onclick = () => { st.s = k; st.f = sc.subjFocus; stop(); draw(); };
+  $('tabs').appendChild(b);
+});
+$('nticks').innerHTML = CK.map(v => `<span>${v}</span>`).join('');
+$('nsl').oninput = e => { st.n = +e.target.value; draw(); };
+$('fsl').oninput = e => { st.f = +e.target.value; draw(); };
+let timer = null, dir = 1;
+function stop() { clearInterval(timer); timer = null; $('nplay').textContent = 'Play N from 1 to 70'; $('fplay').textContent = 'Sweep focus'; }
+$('nplay').onclick = () => {
+  if (timer) return stop();
+  st.n = 0; draw(); $('nplay').textContent = 'Stop';
+  timer = setInterval(() => { if (st.n >= CK.length - 1) return stop(); st.n++; draw(); }, 800);
+};
+$('fplay').onclick = () => {
+  if (timer) return stop();
+  $('fplay').textContent = 'Stop';
+  timer = setInterval(() => {
+    if (st.f + dir < 0 || st.f + dir > FOC.length - 1) dir = -dir;
+    st.f += dir; draw();
+  }, 550);
+};
+draw();
+</script>
+</body>
+</html>
